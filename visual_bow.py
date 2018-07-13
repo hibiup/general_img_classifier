@@ -116,7 +116,7 @@ def gen_sift_features(labeled_img_paths):
     return img_descs, y
 
 
-def cluster_features(img_descs, training_idxs, cluster_model=cluster.KMeans):
+def cluster_features(img_descs, training_idxs, cluster_model=cluster.KMeans(n_clusters=750, n_jobs=-1)):
     """
     Cluster the training features using the cluster_model
     and convert each set of descriptors in img_descs
@@ -138,7 +138,7 @@ def cluster_features(img_descs, training_idxs, cluster_model=cluster.KMeans):
         X has K feature columns, each column corresponding to a visual word
         cluster_model has been fit to the training set
     """
-    model = cluster_model()
+    model = cluster_model
 
     n_clusters = model.n_clusters
 
