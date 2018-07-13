@@ -5,8 +5,11 @@ import cv2
 import numpy as np
 import glob
 import os
+from sklearn import cluster
+
 
 print('OpenCV VERSION (should be 3.1.0 or later, with nonfree modules installed!):', cv2.__version__)
+
 
 def read_image(path):
     img = cv2.imread(path)
@@ -15,15 +18,17 @@ def read_image(path):
     return img
 
 
-def neg_img_cal101(positive_folder, cal101_root='101_ObjectCategories', image_suffix='*.jpg'):
+def neg_img_cal101(positive_folder, cal101_root='images/101_ObjectCategories', image_suffix='*.jpg'):
     """Simply return list of paths for all images in cal101 dataset, except those in positive_folder."""
     return [path for path in glob.glob(cal101_root + '/*/' + image_suffix) if positive_folder not in path]
 
 
-def binary_labeled_img_from_cal101(positive_folder, cal101_root='101_ObjectCategories', image_suffix='*.jpg'):
+def binary_labeled_img_from_cal101(positive_folder, cal101_root='images/101_ObjectCategories', image_suffix='*.jpg'):
     """
     Generate a balanced dataset of positive and negative images from a directory of images
     where each type of image is separated in its own folder.
+
+    positive_folder: 选取的图片目录名，这些图片的 label 将被标注为 True
 
     Returns:
     --------
@@ -35,12 +40,14 @@ def binary_labeled_img_from_cal101(positive_folder, cal101_root='101_ObjectCateg
     pos_imgs = set(glob.glob(os.path.join(cal101_root, positive_folder) + '/' + image_suffix))
     neg_imgs = all_imgs - pos_imgs
 
+    # 随机抽取同等数量的其他图片，标注为 False，连同 positive 图片一起返回
     neg_sample_size = len(pos_imgs)
     selected_negs = np.random.choice(list(neg_imgs), size=neg_sample_size, replace=False)
 
     print('%i positive, %i negative images selected (out of %i negatives total)' % (
         len(pos_imgs), len(selected_negs), len(neg_imgs)))
 
+    # 得到一个 (neg_sample_size + pos_sample_size) x 2 的二纬矩阵
     labeled_img_paths = [[path, True] for path in pos_imgs] + [[path, False] for path in selected_negs]
 
     return np.array(labeled_img_paths)
@@ -48,8 +55,7 @@ def binary_labeled_img_from_cal101(positive_folder, cal101_root='101_ObjectCateg
 
 def train_test_val_split_idxs(total_rows, percent_test, percent_val):
     """
-    Get indexes for training, test, and validation rows, given a total number of rows.
-    Assumes indexes are sequential integers starting at 0: eg [0,1,2,3,...N]
+    生成 index，并随机分成三组分别用于：训练、检测、验证
 
     Returns:
     --------
@@ -105,12 +111,12 @@ def gen_sift_features(labeled_img_paths):
 
     print('SIFT descriptors generated.')
 
-    y = np.array(labeled_img_paths)[:,1]
+    y = np.array(labeled_img_paths)[:,1]   # 图像标签(True or False)
 
     return img_descs, y
 
 
-def cluster_features(img_descs, training_idxs, cluster_model):
+def cluster_features(img_descs, training_idxs, cluster_model=cluster.KMeans):
     """
     Cluster the training features using the cluster_model
     and convert each set of descriptors in img_descs
@@ -132,7 +138,9 @@ def cluster_features(img_descs, training_idxs, cluster_model):
         X has K feature columns, each column corresponding to a visual word
         cluster_model has been fit to the training set
     """
-    n_clusters = cluster_model.n_clusters
+    model = cluster_model()
+
+    n_clusters = model.n_clusters
 
     # # Generate the SIFT descriptor features
     # img_descs = gen_sift_features(labeled_img_paths)
@@ -152,15 +160,15 @@ def cluster_features(img_descs, training_idxs, cluster_model):
     print('%i descriptors before clustering' % all_train_descriptors.shape[0])
 
     # Cluster descriptors to get codebook
-    print('Using clustering model %s...' % repr(cluster_model))
+    print('Using clustering model %s...' % repr(model))
     print('Clustering on training set to get codebook of %i words' % n_clusters)
 
     # train kmeans or other cluster model on those descriptors selected above
-    cluster_model.fit(all_train_descriptors)
+    model.fit(all_train_descriptors)
     print('done clustering. Using clustering model to generate BoW histograms for each image.')
 
     # compute set of cluster-reduced words for each image
-    img_clustered_words = [cluster_model.predict(raw_words) for raw_words in img_descs]
+    img_clustered_words = [model.predict(raw_words) for raw_words in img_descs]
 
     # finally make a histogram of clustered word counts for each image. These are the final features.
     img_bow_hist = np.array(
@@ -169,7 +177,8 @@ def cluster_features(img_descs, training_idxs, cluster_model):
     X = img_bow_hist
     print('done generating BoW histograms.')
 
-    return X, cluster_model
+    return X, model
+
 
 def perform_data_split(X, y, training_idxs, test_idxs, val_idxs):
     """
