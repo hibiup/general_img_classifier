@@ -13,7 +13,7 @@ scoring = 'recall_micro'
 img_descs = joblib.load('pickles/img_descs/img_descs.pickle')
 y = joblib.load('pickles/img_descs/y.pickle')
 
-print len(img_descs), len(y)
+print(len(img_descs), len(y))
 
 
 # generate indexes for train/test/val split
@@ -30,11 +30,11 @@ for K in K_vals:
     X_train, X_test, X_val, y_train, y_test, y_val, cluster_model = search.cluster_and_split(
         img_descs, y, training_idxs, test_idxs, val_idxs, K)
 
-    print "\nInertia for clustering with K=%i is:" % K, cluster_model.inertia_
+    print("\nInertia for clustering with K=%i is:" % K, cluster_model.inertia_)
 
-    print '\nSVM Scores: '
+    print('\nSVM Scores: ')
     svmGS, svm_score = search.run_svm(X_train, X_test, y_train, y_test, scoring)
-    print '\nAdaBoost Scores: '
+    print('\nAdaBoost Scores: ')
     adaGS, ada_score = search.run_ada(X_train, X_test, y_train, y_test, scoring)
 
     results[K] = dict(
@@ -45,11 +45,11 @@ for K in K_vals:
         svm_score=svm_score,
         ada_score=ada_score)
 
-    print '\n*** K=%i DONE ***\n' % K
+    print('\n*** K=%i DONE ***\n' % K)
 
-print '**************************'
-print '***** FINISHED ALL K *****'
-print '**************************\n'
+print('**************************')
+print('***** FINISHED ALL K *****')
+print('**************************\n')
 
 # pickle for later analysis
 ###########################
@@ -62,20 +62,20 @@ for path in [feature_data_path, result_path]:
     for f in glob.glob(path+'/*'):
         os.remove(f)
 
-print 'pickling X_train, X_test, X_val, y_train, y_test, y_val'
+print('pickling X_train, X_test, X_val, y_train, y_test, y_val')
 
 for obj, obj_name in zip( [X_train, X_test, X_val, y_train, y_test, y_val],
                          ['X_train', 'X_test', 'X_val', 'y_train', 'y_test', 'y_val'] ):
     joblib.dump(obj, '%s%s.pickle' % (feature_data_path, obj_name))
 
-print 'pickling results'
+print('pickling results')
 
 exports = joblib.dump(results, '%s/result.pickle' % result_path)
 
-print '\n* * *'
-print 'Scored grid search with metric: "%s"' % scoring
+print('\n* * *')
+print('Scored grid search with metric: "%s"' % scoring)
 
 K_vals = sorted(results.keys())
 for K in K_vals:
-    print 'For K = %i:\tSVM %f\tAdaBoost %f\tK-Means Inertia %f' % (
-        K, results[K]['svm_score'], results[K]['ada_score'], results[K]['inertia']);
+    print('For K = %i:\tSVM %f\tAdaBoost %f\tK-Means Inertia %f' % (
+        K, results[K]['svm_score'], results[K]['ada_score'], results[K]['inertia']))

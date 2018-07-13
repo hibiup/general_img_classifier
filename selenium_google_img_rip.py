@@ -34,7 +34,7 @@ def scroll_down():
         try:
             driver.find_element_by_id('smb').click()
         except:
-            print 'no See More button found...'
+            print('no See More button found...')
 
         new_height = driver.execute_script("return document.body.scrollHeight")
 
@@ -59,9 +59,9 @@ def save_img_src(el, file_no, sleep_time=0.25):
     file_name_full = '%s/%s.%s' % (DOWNLOAD_DIR, file_no, 'JPEG')
     try:
         urllib.urlretrieve(base, file_name_full)
-        print 'wrote from url %s' % file_name_full
+        print('wrote from url %s' % file_name_full)
     except IOError as e:
-        print 'Bad URL?', e
+        print('Bad URL?', e)
 
     time.sleep(sleep_time)
 
@@ -73,14 +73,14 @@ def dl_base64_img(el, file_no, sleep_time=0.25):
 
     base = el.get_attribute('src')
     if not base:
-        print 'no img', file_no
+        print('no img', file_no)
         return
 
     base_clean = base[base.find(','):]
     try:
         base_filetype = re.findall(r'image/(.*);', base)[0]
     except IndexError:
-        print 'no img filetype... trying to save src', file_no
+        print('no img filetype... trying to save src', file_no)
         save_img_src(el, file_no)
         return
 
@@ -88,7 +88,7 @@ def dl_base64_img(el, file_no, sleep_time=0.25):
     with open(file_name_full, 'w') as f:
         f.write(base64.decodestring(base_clean))
 
-    print 'wrote %s' % file_name_full
+    print('wrote %s' % file_name_full)
     time.sleep(sleep_time)
 
 if __name__ == "__main__":
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     while prev_file_no < 1000 and len(imgs) > prev_file_no:
         scroll_down()
         imgs = driver.find_elements_by_xpath(image_xpath)
-        print 'new loop. found %i images, prev_file_no was %i' % (len(imgs), prev_file_no)
+        print('new loop. found %i images, prev_file_no was %i' % (len(imgs), prev_file_no))
         for file_no, img_el in enumerate(imgs[prev_file_no:]):
             dl_base64_img(img_el, file_no+prev_file_no)
         prev_file_no = len(imgs)

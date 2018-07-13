@@ -29,6 +29,7 @@ def grab_img(ramp_frames=0, cam_port=0):
 
     return frame
 
+
 def upload_img(img, temp_img_name='tmp.jpg', panda_api_url='http://54.210.9.61/panda_app/'):
     # save the image to a file
     cv2.imwrite(temp_img_name, img)
@@ -38,7 +39,8 @@ def upload_img(img, temp_img_name='tmp.jpg', panda_api_url='http://54.210.9.61/p
 
     return response
 
+
 if __name__ == '__main__':
     cam_img = grab_img(ramp_frames=12)
     response = upload_img(cam_img)
-    print response.text
+    print(response.text)

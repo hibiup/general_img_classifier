@@ -6,7 +6,7 @@ import numpy as np
 import glob
 import os
 
-print 'OpenCV VERSION (should be 3.1.0 or later, with nonfree modules installed!):', cv2.__version__
+print('OpenCV VERSION (should be 3.1.0 or later, with nonfree modules installed!):', cv2.__version__)
 
 def read_image(path):
     img = cv2.imread(path)
@@ -38,8 +38,8 @@ def binary_labeled_img_from_cal101(positive_folder, cal101_root='101_ObjectCateg
     neg_sample_size = len(pos_imgs)
     selected_negs = np.random.choice(list(neg_imgs), size=neg_sample_size, replace=False)
 
-    print '%i positive, %i negative images selected (out of %i negatives total)' % (
-        len(pos_imgs), len(selected_negs), len(neg_imgs))
+    print('%i positive, %i negative images selected (out of %i negatives total)' % (
+        len(pos_imgs), len(selected_negs), len(neg_imgs)))
 
     labeled_img_paths = [[path, True] for path in pos_imgs] + [[path, False] for path in selected_negs]
 
@@ -71,7 +71,7 @@ def train_test_val_split_idxs(total_rows, percent_test, percent_val):
     # remove validation indexes
     training_idxs = [idx for idx in row_range if idx not in val_idxs]
 
-    print 'Train-test-val split: %i training rows, %i test rows, %i validation rows' % (len(training_idxs), len(test_idxs), len(val_idxs))
+    print('Train-test-val split: %i training rows, %i test rows, %i validation rows' % (len(training_idxs), len(test_idxs), len(val_idxs)))
 
     return training_idxs, test_idxs, val_idxs
 
@@ -93,7 +93,7 @@ def gen_sift_features(labeled_img_paths):
     # img_keypoints = {}
     img_descs = []
 
-    print 'generating SIFT descriptors for %i images' % len(labeled_img_paths)
+    print('generating SIFT descriptors for %i images' % len(labeled_img_paths))
 
     for img_path, label in labeled_img_paths:
         img = read_image(img_path)
@@ -103,7 +103,7 @@ def gen_sift_features(labeled_img_paths):
         # img_keypoints[img_path] = kp
         img_descs.append(desc)
 
-    print 'SIFT descriptors generated.'
+    print('SIFT descriptors generated.')
 
     y = np.array(labeled_img_paths)[:,1]
 
@@ -149,15 +149,15 @@ def cluster_features(img_descs, training_idxs, cluster_model):
     if all_train_descriptors.shape[1] != 128:
         raise ValueError('Expected SIFT descriptors to have 128 features, got', all_train_descriptors.shape[1])
 
-    print '%i descriptors before clustering' % all_train_descriptors.shape[0]
+    print('%i descriptors before clustering' % all_train_descriptors.shape[0])
 
     # Cluster descriptors to get codebook
-    print 'Using clustering model %s...' % repr(cluster_model)
-    print 'Clustering on training set to get codebook of %i words' % n_clusters
+    print('Using clustering model %s...' % repr(cluster_model))
+    print('Clustering on training set to get codebook of %i words' % n_clusters)
 
     # train kmeans or other cluster model on those descriptors selected above
     cluster_model.fit(all_train_descriptors)
-    print 'done clustering. Using clustering model to generate BoW histograms for each image.'
+    print('done clustering. Using clustering model to generate BoW histograms for each image.')
 
     # compute set of cluster-reduced words for each image
     img_clustered_words = [cluster_model.predict(raw_words) for raw_words in img_descs]
@@ -167,7 +167,7 @@ def cluster_features(img_descs, training_idxs, cluster_model):
         [np.bincount(clustered_words, minlength=n_clusters) for clustered_words in img_clustered_words])
 
     X = img_bow_hist
-    print 'done generating BoW histograms.'
+    print('done generating BoW histograms.')
 
     return X, cluster_model
 
